@@ -1,3 +1,7 @@
+<p align="center">
+    <img src="assets/img/cmk-logo-text.png" width="600" />
+</p>
+
 # Docker Compose Checkmk - Monitoring
 
 As a monitoring software, Checkmk offers comprehensive and specialized solutions for dealing with the very diverse environments of IT infrastructures. This inevitably requires a very comprehensive documentation which goes beyond the mere description of the obvious. Our User Guide will help you as much as possible to better understand Checkmk, use Checkmk to implement your requirements, as well as helping you to discover new ways of solving problems
