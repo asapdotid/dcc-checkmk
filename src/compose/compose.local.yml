@@ -1,0 +1,111 @@
+---
+networks:
+  proxynet:
+    name: proxynet
+  securenet:
+    name: securenet
+
+services:
+  dockerproxy:
+    restart: unless-stopped
+    environment:
+      - ALLOW_START=0
+      - ALLOW_STOP=0
+      - ALLOW_RESTARTS=0
+      - AUTH=0
+      - BUILD=0
+      - COMMIT=0
+      - CONFIGS=0
+      - CONTAINERS=1
+      - DISABLE_IPV6=0
+      - DISTRIBUTION=0
+      - EVENTS=1
+      - EXEC=0
+      - IMAGES=0
+      - INFO=1
+      - NETWORKS=1
+      - NODES=1
+      - PING=1
+      - PLUGINS=0
+      - POST=0
+      - PROXY_READ_TIMEOUT=240
+      - SECRETS=0
+      - SERVICES=0
+      - SESSION=0
+      - SWARM=0
+      - SYSTEM=0
+      - TASKS=0
+      - VERSION=1
+      - VOLUMES=0
+    privileged: true
+    read_only: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    tmpfs:
+      - /run
+    networks:
+      - securenet
+
+  traefik:
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ${CURDIR}/.data/traefik/ssl/:/etc/traefik/ssl/
+      - ${CURDIR}/.logs/traefik/:/var/log/traefik/
+    environment:
+      - DOCKER_HOST=dockerproxy
+    ports:
+      - target: 80
+        published: ${TRAEFIK_HOST_HTTP_PORT:-80}
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: ${TRAEFIK_HOST_HTTPS_PORT:-443}
+        protocol: tcp
+        mode: host
+      - target: 9443
+        published: ${TRAEFIK_HOST_AGENT_HTTPS_PORT:-9443}
+        protocol: tcp
+        mode: host
+    networks:
+      - securenet
+      - proxynet
+    depends_on:
+      - dockerproxy
+
+  logger:
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ${CURDIR}/.logs/traefik:/var/log/traefik
+    networks:
+      - securenet
+    depends_on:
+      - traefik
+
+  checkmk:
+    restart: unless-stopped
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${CURDIR}/.data/checkmk:/omd/sites
+    tmpfs:
+      - /opt/omd/sites/${CHECKMK_SITE_ID?}/tmp:uid=${CHECKMK_USER_ID:-1000},gid=${CHECKMK_GROUP_ID:-1000}
+    ulimits:
+      nofile: 1024
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks:
+      - securenet
+    depends_on:
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=securenet
+      - traefik.http.routers.checkmk.rule=Host(`${CHECKMK_DOMAIN_NAME}`)
+      - traefik.http.routers.checkmk.service=cmkWebService@file
+      - traefik.http.routers.checkmk.entrypoints=https
+      - traefik.http.routers.checkmk-agent.rule=Host(`${CHECKMK_DOMAIN_NAME}`)
+      - traefik.http.routers.checkmk-agent.service=cmkAgentService@file
+      - traefik.http.routers.checkmk-agent.entrypoints=agentHttps
