@@ -96,6 +96,10 @@ services:
       nofile: 1024
     extra_hosts:
       - host.docker.internal:host-gateway
+    expose:
+      - 5000
+      - 6557
+      - 8000
     networks:
       - securenet
     depends_on:
