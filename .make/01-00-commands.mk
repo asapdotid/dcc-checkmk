@@ -16,4 +16,8 @@ logger-shell: ## Execute shell script in Logger container with arguments ARGS="p
 
 .PHONY: docker-shell
 docker-shell: ## Execute shell script in Docker proxy container with arguments ARGS="pwd"
-	@$(DOCKER_SERVICE_NAME_DOCKER_PROXY) $(ARGS);
+	@$(EXECUTE_IN_DOCKER_SOCKET_CONTAINER) $(ARGS);
+
+.PHONY: checkmk-shell
+checkmk-shell: ## Execute shell script in Checkmk container with arguments ARGS="pwd"
+	@$(EXECUTE_IN_CHECKMK_CONTAINER) $(ARGS);

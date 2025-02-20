@@ -1,7 +1,6 @@
 # For local builds we always want to use "latest" as tag per default
 TAG:=latest
 
-
 # Enable buildkit for docker and docker-compose by default for every environment.
 # For specific environments (e.g. MacBook with Apple Silicon M1 CPU) it should be turned off to work stable
 # - this can be done in the .make/.env file
@@ -16,6 +15,7 @@ export DOCKER_BUILDKIT
 DOCKER_SERVICE_NAME_DOCKER_PROXY:=dockersocket
 DOCKER_SERVICE_NAME_TRAEFIK:=traefik
 DOCKER_SERVICE_NAME_LOGGER:=logger
+DOCKER_SERVICE_NAME_CHECKMK:=checkmk
 
 # FYI:
 # Naming convention for images is $(DOCKER_REGISTRY)/$(DOCKER_NAMESPACE)/$(DOCKER_SERVICE_NAME)-$(ENV)
@@ -68,6 +68,7 @@ ifeq ($(EXECUTE_IN_CONTAINER),true)
     EXECUTE_IN_TRAEFIK_CONTAINER:=$(DOCKER_COMPOSE) exec -T $(DOCKER_SERVICE_NAME_TRAEFIK)
 	EXECUTE_IN_DOCKER_SOCKET_CONTAINER:=$(DOCKER_COMPOSE) exec -T $(DOCKER_SERVICE_NAME_DOCKER_PROXY)
 	EXECUTE_IN_LOGGER_CONTAINER:=$(DOCKER_COMPOSE) exec -T $(DOCKER_SERVICE_NAME_LOGGER)
+    EXECUTE_IN_CHECKMK_CONTAINER:=$(DOCKER_COMPOSE) exec -T $(DOCKER_SERVICE_NAME_CHECKMK)
 endif
 
 ##@ [Docker]
