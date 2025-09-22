@@ -1,0 +1,33 @@
+---
+networks:
+  proxy:
+    driver: bridge
+    external: true
+
+services:
+  checkmk:
+    image: ${DOCKER_REGISTRY?}/${DOCKER_NAMESPACE?}/${DOCKER_IMAGE?}:${DOCKER_IMAGE_VERSION?}
+    container_name: checkmk
+    env_file:
+      - ${CURDIR}/src/.env
+    restart: always
+    volumes:
+      - ${CURDIR}/.data/checkmk:/omd/sites
+    tmpfs:
+      - /opt/omd/sites/${CMK_SITE_ID?}/tmp:uid=${CMK_USER_ID:-1000},gid=${CMK_GROUP_ID:-1000}
+    ulimits:
+      nofile: 1024
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "8000:8000"
+      - "162:162/udp"
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.services.checkmk.loadbalancer.server.port=5000
+      - traefik.http.routers.checkmk.entrypoints=${CMK_TRAEFIK_ENTRYPOINTS?}
+      - traefik.http.routers.checkmk.rule=Host(`${CMK_SET_DOMAIN_NAME?}`)
+      - traefik.http.routers.checkmk.tls=true

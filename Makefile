@@ -32,6 +32,10 @@ MAKEFLAGS += --no-builtin-rules
 
 # Common variable to pass arbitrary options to targets
 ARGS?=
+PROJECT_DIR := $(CURDIR)
+# Set directories
+PROJECT_MAKE_DIR := $(PROJECT_DIR)/.make
+PROJECT_SOURCE_DIR := $(PROJECT_DIR)/src
 
 # @see https://www.thapaliya.com/en/writings/well-documented-makefiles/
 DEFAULT_GOAL := help

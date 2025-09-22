@@ -6,18 +6,6 @@ execute-in-container:
 	@$(if $(COMMAND),,$(error COMMAND is undefined))
 	$(EXECUTE_IN_ANY_CONTAINER) $(COMMAND)
 
-.PHONY: traefik-shell
-traefik-shell: ## Execute shell script in Traefik container with arguments ARGS="pwd"
-	@$(EXECUTE_IN_TRAEFIK_CONTAINER) $(ARGS);
-
-.PHONY: logger-shell
-logger-shell: ## Execute shell script in Logger container with arguments ARGS="pwd"
-	@$(EXECUTE_IN_LOGGER_CONTAINER) $(ARGS);
-
-.PHONY: docker-shell
-docker-shell: ## Execute shell script in Docker proxy container with arguments ARGS="pwd"
-	@$(EXECUTE_IN_DOCKER_SOCKET_CONTAINER) $(ARGS);
-
-.PHONY: checkmk-shell
-checkmk-shell: ## Execute shell script in Checkmk container with arguments ARGS="pwd"
-	@$(EXECUTE_IN_CHECKMK_CONTAINER) $(ARGS);
+.PHONY: cmk-shell
+cmk-shell: ## Execute shell script in Checkmk container with arguments ARGS="odm"
+	@$(EXECUTE_IN_ANY_CONTAINER) $(ARGS);

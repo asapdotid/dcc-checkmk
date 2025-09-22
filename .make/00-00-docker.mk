@@ -1,53 +1,29 @@
-# For local builds we always want to use "latest" as tag per default
-TAG:=latest
-
 # Enable buildkit for docker and docker-compose by default for every environment.
 # For specific environments (e.g. MacBook with Apple Silicon M1 CPU) it should be turned off to work stable
 # - this can be done in the .make/.env file
 COMPOSE_DOCKER_CLI_BUILD?=1
 DOCKER_BUILDKIT?=1
 
-export COMPOSE_DOCKER_CLI_BUILD
-export DOCKER_BUILDKIT
-
 # Container names
 ## must match the names used in the docker-composer.yml files
-DOCKER_SERVICE_NAME_DOCKER_PROXY:=dockersocket
-DOCKER_SERVICE_NAME_TRAEFIK:=traefik
-DOCKER_SERVICE_NAME_LOGGER:=logger
-DOCKER_SERVICE_NAME_CHECKMK:=checkmk
+DOCKER_SERVICE_NAME:=checkmk
 
-# FYI:
-# Naming convention for images is $(DOCKER_REGISTRY)/$(DOCKER_NAMESPACE)/$(DOCKER_SERVICE_NAME)-$(ENV)
-# e.g.               docker.io/asapdotid/traefik:latest
-# $(DOCKER_REGISTRY)---^          ^       ^      ^        docker.io
-# $(DOCKER_NAMESPACE)-------------^       ^      ^        asapdotid
-# $(DOCKER_SERVICE_NAME)------------------^      ^        traefik
-
-DOCKER_DIR:=$(CURDIR)/src
-DOCKER_ENV_FILE:=$(DOCKER_DIR)/.env
-DOCKER_COMPOSE_DIR:=$(DOCKER_DIR)/compose
-DOCKER_COMPOSE_FILE:=$(DOCKER_COMPOSE_DIR)/compose.yml
-DOCKER_COMPOSE_FILE_ENV:=$(DOCKER_COMPOSE_DIR)/compose.local.yml
+DOCKER_ENV_FILE:=$(PROJECT_SOURCE_DIR)/.env
+DOCKER_COMPOSE_FILE:=$(PROJECT_SOURCE_DIR)/compose.yml
 
 # we need a couple of environment variables for docker-compose so we define a make-variable that we can
 # then reference later in the Makefile without having to repeat all the environment variables
 DOCKER_COMPOSE_COMMAND:= \
+    CURDIR=$(CURDIR) \
     DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
     DOCKER_NAMESPACE=$(DOCKER_NAMESPACE) \
-    DOCKER_PROXY_VERSION=$(DOCKER_PROXY_VERSION) \
-    TRAEFIK_VERSION=$(TRAEFIK_VERSION) \
-    ALPINE_VERSION=$(ALPINE_VERSION) \
-    CHECKMK_VERSION=$(CHECKMK_VERSION) \
-    TIMEZONE=$(TIMEZONE) \
-    TAG=$(TAG) \
+    DOCKER_IMAGE=$(DOCKER_IMAGE) \
+    DOCKER_IMAGE_VERSION=$(DOCKER_IMAGE_VERSION) \
     docker compose -p $(DOCKER_PROJECT_NAME) --env-file $(DOCKER_ENV_FILE)
 
-DOCKER_COMPOSE:=$(DOCKER_COMPOSE_COMMAND) -f $(DOCKER_COMPOSE_FILE) -f $(DOCKER_COMPOSE_FILE_ENV)
+DOCKER_COMPOSE:=$(DOCKER_COMPOSE_COMMAND) -f $(DOCKER_COMPOSE_FILE)
 
 EXECUTE_IN_ANY_CONTAINER?=
-
-DOCKER_SERVICE_NAME?=
 
 # we can pass EXECUTE_IN_CONTAINER=true to a make invocation in order to execute the target in a docker container.
 # Caution: this only works if the command in the target is prefixed with a $(EXECUTE_IN_*_CONTAINER) variable.
@@ -65,28 +41,19 @@ ifndef EXECUTE_IN_CONTAINER
 endif
 ifeq ($(EXECUTE_IN_CONTAINER),true)
 	EXECUTE_IN_ANY_CONTAINER:=$(DOCKER_COMPOSE) exec -T $(DOCKER_SERVICE_NAME)
-    EXECUTE_IN_TRAEFIK_CONTAINER:=$(DOCKER_COMPOSE) exec -T $(DOCKER_SERVICE_NAME_TRAEFIK)
-	EXECUTE_IN_DOCKER_SOCKET_CONTAINER:=$(DOCKER_COMPOSE) exec -T $(DOCKER_SERVICE_NAME_DOCKER_PROXY)
-	EXECUTE_IN_LOGGER_CONTAINER:=$(DOCKER_COMPOSE) exec -T $(DOCKER_SERVICE_NAME_LOGGER)
-    EXECUTE_IN_CHECKMK_CONTAINER:=$(DOCKER_COMPOSE) exec -T $(DOCKER_SERVICE_NAME_CHECKMK)
 endif
 
 ##@ [Docker]
 
 validate-variables:
-	@$(if $(TAG),,$(error TAG is undefined))
 	@$(if $(DOCKER_REGISTRY),,$(error DOCKER_REGISTRY is undefined - Did you run make-init?))
 	@$(if $(DOCKER_NAMESPACE),,$(error DOCKER_NAMESPACE is undefined - Did you run make-init?))
+	@$(if $(DOCKER_IMAGE),,$(error DOCKER_IMAGE is undefined - Did you run make-init?))
+	@$(if $(DOCKER_IMAGE_VERSION),,$(error DOCKER_IMAGE_VERSION is undefined - Did you run make-init?))
 	@$(if $(DOCKER_PROJECT_NAME),,$(error DOCKER_PROJECT_NAME is undefined - Did you run make-init?))
 
 .docker/.env:
 	@cp $(DOCKER_ENV_FILE).example $(DOCKER_ENV_FILE)
-
-build-image: validate-variables
-	@$(DOCKER_COMPOSE) build $(DOCKER_SERVICE_NAME)
-
-.PHONY: build
-build: build-image ## Build the php image and then all other docker images
 
 .PHONY: clean
 clean: ## Removing dangling and unused images
